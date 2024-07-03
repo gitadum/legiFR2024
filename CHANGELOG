@@ -5,6 +5,7 @@
 - 2023-07-03
 
 - mise en paquet du projet
+- possibilité d'importer les classes `Scrutin` et `PremierTour` depuis le paquet
 
 ## v0.1.1
 
