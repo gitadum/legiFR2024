@@ -6,6 +6,9 @@ from utils import lire_tables_web, parsage_nombres
 MININT  = "https://www.resultats-elections.interieur.gouv.fr"
 URLBASE = "/".join([MININT, "legislatives2024", "ensemble_geographique"])
 
+# Dictionnaire de clés techniques du site officiel des élections législatives
+# L'URL d'un résultat par département est associé à un identifiant géographique
+# ENSGEOS associe le numéros du département (clé) à l'ID géographique (valeur)
 ENSGEOS = {"01":"84", "02":"32", "03":"84", "04":"93", "05":"93",
            "06":"93", "07":"84", "08":"44", "09":"76", "10":"44",
            "11":"76", "12":"76", "13":"93", "14":"28", "15":"84",
@@ -30,37 +33,16 @@ ENSGEOS = {"01":"84", "02":"32", "03":"84", "04":"93", "05":"93",
            "ZX": "", "ZZ": ""
            }
 
-def est_elu(candidat):
-    if (candidat["Pct. Exprimés"] >= .5) and (candidat["Pct. Inscrits"] >= .25):
-        return True
-    else:
-        return False
-
-
-def est_qualifie(candidat):
-    if candidat["Eliminé"]:
-        return False
-    elif candidat["Pct. Inscrits"] < .125:
-        return False
-    else:
-        return True
-
-
-def est_elimine(candidat):
-    if candidat["Elu"] or candidat["Qualifié"]:
-        return False
-    else:
-        return True
-
 
 class Scrutin:
-    colsnum = ["Voix", "% Inscrits", "% Exprimés"]
-    
+    """
+    Scrutin législatif pour une circonscription française donnée
+    """
     def __init__(self, dept: str, circ: int) -> None:
         self.dept = dept
         self.circ = circ
-        self.resultat = None
-        self.particip = None
+        self.resultat: pd.DataFrame = None
+        self.particip: pd.DataFrame = None
         pass
     
     def recup_resultat(self):
@@ -86,12 +68,57 @@ class Scrutin:
         self.resultat = res
 
 class PremierTour(Scrutin):
+
+    def est_elu(candidat):
+        """
+        Détermine si un candidat est en situation d'être élu dès le 1er tour.
+        Rappel de la règle :
+        Pour être élu député dès le 1er tour, un candidat doit rassembler au moins :
+        * 50% des suffrages exprimés
+        * 25% des électeurs inscrits
+        """
+        if (candidat["Pct. Exprimés"] >= .5) and (candidat["Pct. Inscrits"] >= .25):
+            return True
+        else:
+            return False
+    
+    def est_qualifie(candidat):
+        """
+        Détermine si un candidat est en situation d'être qualifié au 2nd tour.
+        Rappel de la règle :
+        Pour être qualifié pour le 2nd tour, un candidat :
+        * Ne doit pas avoir été éliminé
+        * Doit rassembler au moins 12,5% des électeurs inscrits
+        """
+        if candidat["Eliminé"]:
+            return False
+        elif candidat["Pct. Inscrits"] < .125:
+            return False
+        else:
+            return True
+
+    def est_elimine(candidat):
+        """
+        Acte l'élimination d'un candidat qui n'est pas élu ni qualifié.
+        À utiliser après application des méthodes `est_elu` et `est_qualifie`
+        """
+        if candidat["Elu"] or candidat["Qualifié"]:
+            return False
+        else:
+            return True
+
     def issue(self):
         self.recup_resultat()
         self.prepare_resultat()
-        self.resultat["Eliminé"] = False
-        self.resultat["Elu"] = self.resultat.apply(est_elu, axis=1)
-        if self.resultat[self.resultat["Elu"]].shape[0] != 0:
-            self.resultat.loc[~self.resultat["Elu"], "Eliminé"] = True
-        self.resultat["Qualifié"] = self.resultat.apply(est_qualifie, axis=1)
-        self.resultat["Eliminé"] = self.resultat.apply(est_elimine, axis=1)
+        resu = self.resultat
+        resu["Eliminé"] = False
+        # Détermine si un candidat est élu dès le 1er tour
+        resu["Elu"] = resu.apply(PremierTour.est_elu, axis=1)
+        # Si un candidat est élu dès le 1er tour, les autres sont éliminés
+        if resu[resu["Elu"]].shape[0] != 0:
+            resu.loc[~resu["Elu"], "Eliminé"] = True
+        # Détermine quels candidats sont qualifiés pour le 2nd tour
+        resu["Qualifié"] = resu.apply(PremierTour.est_qualifie, axis=1)
+        # Élimine les candidats qui ne sont ni élus ni qualifiés
+        resu["Eliminé"] = resu.apply(PremierTour.est_elimine, axis=1)
+        self.resultat = resu
