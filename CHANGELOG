@@ -1,5 +1,14 @@
 # Journal des versions du projet
 
+## v1.0.1
+
+- 2023-07-03
+
+- correction `PremierTour.recup_resultat()` : mauvais tableau récupéré
+
+  - changement dans le tableau récupéré du fait de la publication de la liste des candidats pour le 2nd tour
+  - changement dans l'ordre des tableaux
+
 ## v1.0.0
 
 - 2023-07-03

@@ -50,7 +50,7 @@ class Scrutin:
         scirc = sdept + str(self.circ).zfill(2)
         numgeo = ENSGEOS[self.dept]
         url =  "/".join([URLBASE, numgeo, sdept, scirc, "index.html"])
-        self.resultat, self.particip = lire_tables_web(url)[:2]
+        self.resultat, self.particip = lire_tables_web(url)[1:3]
         self.particip.set_index(self.particip.columns[0], inplace=True)
         self.particip.index.name = "Participation"
     
