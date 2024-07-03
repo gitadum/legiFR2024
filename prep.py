@@ -87,10 +87,11 @@ class PremierTour(Scrutin):
         Détermine si un candidat est en situation d'être qualifié au 2nd tour.
         Rappel de la règle :
         Pour être qualifié pour le 2nd tour, un candidat :
+        * Ne doit pas avoir été élu
         * Ne doit pas avoir été éliminé
         * Doit rassembler au moins 12,5% des électeurs inscrits
         """
-        if candidat["Eliminé"]:
+        if  candidat["Elu"] or candidat["Eliminé"]:
             return False
         elif candidat["Pct. Inscrits"] < .125:
             return False

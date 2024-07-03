@@ -1,5 +1,10 @@
 # Journal des versions du projet
 
+## v0.1.1
+
+- 2023-07-03
+- correction `PremierTour.est_qualifie()`: être élu signifie ne pas être qualifié
+
 ## v0.1.0
 
 - 2023-07-03
