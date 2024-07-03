@@ -45,12 +45,21 @@ class Scrutin:
         self.particip: pd.DataFrame = None
         pass
     
-    def recup_resultat(self):
+    def recup_resultat(self, posresu: int, pospart: int):
+        """
+        Récupère les tableaux de résultats et participations
+        pour le scrutin depuis le site du ministère de l'intérieur
+        * posresu: position du tableau résultat parmi les tableaux scrappés
+        * pospart: position du tableau participation parmi les tableaux scrappés
+        
+        N.B. : la position de ces tableaux change
+        selon que le scrutin soit un 1er ou un 2nd tour.
+        """
         sdept = str(self.dept).zfill(2)
         scirc = sdept + str(self.circ).zfill(2)
         numgeo = ENSGEOS[self.dept]
         url =  "/".join([URLBASE, numgeo, sdept, scirc, "index.html"])
-        self.resultat, self.particip = lire_tables_web(url)[1:3]
+        self.resultat, self.particip = lire_tables_web(url)[posresu:pospart+1]
         self.particip.set_index(self.particip.columns[0], inplace=True)
         self.particip.index.name = "Participation"
     
@@ -109,7 +118,7 @@ class PremierTour(Scrutin):
             return True
 
     def issue(self):
-        self.recup_resultat()
+        self.recup_resultat(posresu=1, pospart=2)
         self.prepare_resultat()
         resu = self.resultat
         resu["Eliminé"] = False
