@@ -3,7 +3,13 @@
 ## v0.1.1
 
 - 2023-07-03
+
 - correction `PremierTour.est_qualifie()`: être élu signifie ne pas être qualifié
+
+- correction `PremierTour.issue()`: prend en compte le cas des "repêchages"
+
+  - si aucun candidat n'est élu et que le seuil de 12,5% du corps électoral n'est pas atteint par au moins 2 candidats (situation possible en cas de forte abstention lors du scrutin),
+  - dans ce cas les 2 premiers candidats en nombre de voix sont qualifiés pour le second tour.
 
 ## v0.1.0
 

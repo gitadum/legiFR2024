@@ -122,4 +122,12 @@ class PremierTour(Scrutin):
         resu["Qualifié"] = resu.apply(PremierTour.est_qualifie, axis=1)
         # Élimine les candidats qui ne sont ni élus ni qualifiés
         resu["Eliminé"] = resu.apply(PremierTour.est_elimine, axis=1)
+        # Si aucun des candidats n'est élu
+        # et qu'il y n'y a pas au moins 2 candidats qualifiés,
+        # on prend les 2 premiers candidats par nombre de voix,
+        # et on qualifie ces candidats pour le 2nd tour
+        if (resu[resu["Elu"]].shape[0] == 0) and (resu[resu["Qualifié"]].shape[0] < 2):
+            deux_premiers = resu.sort_values(by="Voix", ascending=False)[:2].index
+            resu.loc[deux_premiers, "Qualifié"] = True
+            resu.loc[deux_premiers, "Eliminé"] = False
         self.resultat = resu
