@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "legiFR2024"
+version = "1.0.0a"
+description = "Utilitaire Python pour les élections législatives françaises de 2024"
+authors = [
+    {name="Adrien DUMONT", email="dev@adum.io"}
+    ]
+license = "GPL-3.0"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "bs4==0.0.2",
+    "html5lib==1.1",
+    "lxml==5.2.2",
+    "pandas==2.2.2",
+]
+#license = {file = "LICENSE"}
+
+
+[project.urls]
+Repository = "https://github.com/gitadum/legiFR2024.git"
+"Bug Tracker" = "https://github.com/gitadum/legiFR2024/issues"
+Changelog = "https://github.com/gitadum/legiFR2024/blob/master/CHANGELOG.md"
