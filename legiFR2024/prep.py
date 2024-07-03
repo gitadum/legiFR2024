@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pandas as pd
-from utils import lire_tables_web, parsage_nombres
+from legiFR2024.utils import lire_tables_web, parsage_nombres
 
 MININT  = "https://www.resultats-elections.interieur.gouv.fr"
 URLBASE = "/".join([MININT, "legislatives2024", "ensemble_geographique"])
