@@ -1,5 +1,15 @@
 # Journal des versions du projet
 
+## v2.0.0
+
+- 2023-07-03
+
+- ajout d'arguments dans `Scrutin.recup_resultat()`
+  - changement dans le comportement de `Scrutin.recup_resultat()`
+  - la méthode exige désormais 2 arguments positionnels `posresu` et `pospart`
+  - ces arguments correspondent à la position des tableaux dans la liste des tableaux scrappés sur le site du ministère de l'intérieur
+  - ces positions seront différente pour l'objet enfant `PremierTour` et pour le futur objet enfant `SecondTour`
+
 ## v1.0.1
 
 - 2023-07-03
