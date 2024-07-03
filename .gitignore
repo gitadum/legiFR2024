@@ -1,0 +1,11 @@
+# Environnement
+
+.venv
+
+# Python
+
+__pycache__
+
+# Tests
+
+test.ipynb
