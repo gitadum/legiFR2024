@@ -38,9 +38,10 @@ class Scrutin:
     """
     Scrutin législatif pour une circonscription française donnée
     """
-    def __init__(self, dept: str, circ: int) -> None:
+    def __init__(self, dept: str, circ: int, clos: bool = True) -> None:
         self.dept = dept
         self.circ = circ
+        self.clos = clos
         self.resultat: pd.DataFrame = None
         self.particip: pd.DataFrame = None
         pass
@@ -59,22 +60,31 @@ class Scrutin:
         scirc = sdept + str(self.circ).zfill(2)
         numgeo = ENSGEOS[self.dept]
         url =  "/".join([URLBASE, numgeo, sdept, scirc, "index.html"])
-        self.resultat, self.particip = lire_tables_web(url)[posresu:pospart+1]
-        self.particip.set_index(self.particip.columns[0], inplace=True)
-        self.particip.index.name = "Participation"
+        self.resultat = lire_tables_web(url)[posresu]
+        if pospart is not None:
+            self.particip = lire_tables_web(url)[pospart] 
+            self.particip.set_index(self.particip.columns[0], inplace=True)
+            self.particip.index.name = "Participation"
     
     def prepare_resultat(self):
         res = self.resultat
         ptc = self.particip
-        cols_a_garder = ["Liste des candidats", "Nuance", "Voix"]
-        res = res.loc[:, cols_a_garder]
-        res.loc[:, "Voix"] = res["Voix"].map(parsage_nombres)
-        ptc.loc[:, "Nombre"] = ptc["Nombre"].map(parsage_nombres)
-        res["Tot. Exprimés"] = res["Voix"].sum()
-        res["Tot. Inscrits"] = ptc.loc["Inscrits", "Nombre"]
-        res["Pct. Exprimés"] = res["Voix"] / res["Tot. Exprimés"]
-        res["Pct. Inscrits"] = res["Voix"] / res["Tot. Inscrits"]
-        self.resultat = res
+        cols_a_garder = ["Liste des candidats", "Nuance"]
+        try:
+            "Voix" in list(res.columns) and ptc is not None
+            cols_a_garder.append["Voix"]
+            res.loc[:, "Voix"] = res["Voix"].map(parsage_nombres)
+            res["Tot. Exprimés"] = res["Voix"].sum()
+            ptc.loc[:, "Nombre"] = ptc["Nombre"].map(parsage_nombres)
+            res["Tot. Inscrits"] = ptc.loc["Inscrits", "Nombre"]
+            res["Pct. Exprimés"] = res["Voix"] / res["Tot. Exprimés"]
+            res["Pct. Inscrits"] = res["Voix"] / res["Tot. Inscrits"]
+        except:
+            print("Les résultats et la participation ne sont pas disponibles.")
+            pass
+        finally:
+            res = res.loc[:, cols_a_garder]
+            self.resultat = res
 
 class PremierTour(Scrutin):
 
@@ -118,25 +128,27 @@ class PremierTour(Scrutin):
             return True
 
     def issue(self):
-        self.recup_resultat(posresu=1, pospart=2)
+        pospart = 2 if self.clos else None 
+        self.recup_resultat(posresu=1, pospart=pospart)
         self.prepare_resultat()
-        resu = self.resultat
-        resu["Eliminé"] = False
-        # Détermine si un candidat est élu dès le 1er tour
-        resu["Elu"] = resu.apply(PremierTour.est_elu, axis=1)
-        # Si un candidat est élu dès le 1er tour, les autres sont éliminés
-        if resu[resu["Elu"]].shape[0] != 0:
-            resu.loc[~resu["Elu"], "Eliminé"] = True
-        # Détermine quels candidats sont qualifiés pour le 2nd tour
-        resu["Qualifié"] = resu.apply(PremierTour.est_qualifie, axis=1)
-        # Élimine les candidats qui ne sont ni élus ni qualifiés
-        resu["Eliminé"] = resu.apply(PremierTour.est_elimine, axis=1)
-        # Si aucun des candidats n'est élu
-        # et qu'il y n'y a pas au moins 2 candidats qualifiés,
-        # on prend les 2 premiers candidats par nombre de voix,
-        # et on qualifie ces candidats pour le 2nd tour
-        if (resu[resu["Elu"]].shape[0] == 0) and (resu[resu["Qualifié"]].shape[0] < 2):
-            deux_premiers = resu.sort_values(by="Voix", ascending=False)[:2].index
-            resu.loc[deux_premiers, "Qualifié"] = True
-            resu.loc[deux_premiers, "Eliminé"] = False
-        self.resultat = resu
+        if self.clos:
+            resu = self.resultat
+            resu["Eliminé"] = False
+            # Détermine si un candidat est élu dès le 1er tour
+            resu["Elu"] = resu.apply(PremierTour.est_elu, axis=1)
+            # Si un candidat est élu dès le 1er tour, les autres sont éliminés
+            if resu[resu["Elu"]].shape[0] != 0:
+                resu.loc[~resu["Elu"], "Eliminé"] = True
+            # Détermine quels candidats sont qualifiés pour le 2nd tour
+            resu["Qualifié"] = resu.apply(PremierTour.est_qualifie, axis=1)
+            # Élimine les candidats qui ne sont ni élus ni qualifiés
+            resu["Eliminé"] = resu.apply(PremierTour.est_elimine, axis=1)
+            # Si aucun des candidats n'est élu
+            # et qu'il y n'y a pas au moins 2 candidats qualifiés,
+            # on prend les 2 premiers candidats par nombre de voix,
+            # et on qualifie ces candidats pour le 2nd tour
+            if (resu[resu["Elu"]].shape[0] == 0) and (resu[resu["Qualifié"]].shape[0] < 2):
+                deux_premiers = resu.sort_values(by="Voix", ascending=False)[:2].index
+                resu.loc[deux_premiers, "Qualifié"] = True
+                resu.loc[deux_premiers, "Eliminé"] = False
+            self.resultat = resu
