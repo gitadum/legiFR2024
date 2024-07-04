@@ -1,5 +1,11 @@
 # Journal des versions du projet
 
+## v2.1.1
+
+- 2023-07-04
+
+- `utils` : Séparation de la partie "scrapage"
+
 ## v2.1.0
 
 - 2023-07-04
