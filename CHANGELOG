@@ -1,5 +1,11 @@
 # Journal des versions du projet
 
+## v2.0.1
+
+- 2023-07-04
+
+- `Scrutin` prévoit le cas où le vote n'a pas eu lieu
+
 ## v2.0.0
 
 - 2023-07-03

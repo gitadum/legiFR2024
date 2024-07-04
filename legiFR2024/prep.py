@@ -59,22 +59,31 @@ class Scrutin:
         scirc = sdept + str(self.circ).zfill(2)
         numgeo = ENSGEOS[self.dept]
         url =  "/".join([URLBASE, numgeo, sdept, scirc, "index.html"])
-        self.resultat, self.particip = lire_tables_web(url)[posresu:pospart+1]
-        self.particip.set_index(self.particip.columns[0], inplace=True)
-        self.particip.index.name = "Participation"
+        self.resultat = lire_tables_web(url)[posresu]
+        if pospart is not None:
+            self.particip = lire_tables_web(url)[pospart] 
+            self.particip.set_index(self.particip.columns[0], inplace=True)
+            self.particip.index.name = "Participation"
     
     def prepare_resultat(self):
         res = self.resultat
         ptc = self.particip
-        cols_a_garder = ["Liste des candidats", "Nuance", "Voix"]
-        res = res.loc[:, cols_a_garder]
-        res.loc[:, "Voix"] = res["Voix"].map(parsage_nombres)
-        ptc.loc[:, "Nombre"] = ptc["Nombre"].map(parsage_nombres)
-        res["Tot. Exprimés"] = res["Voix"].sum()
-        res["Tot. Inscrits"] = ptc.loc["Inscrits", "Nombre"]
-        res["Pct. Exprimés"] = res["Voix"] / res["Tot. Exprimés"]
-        res["Pct. Inscrits"] = res["Voix"] / res["Tot. Inscrits"]
-        self.resultat = res
+        cols_a_garder = ["Liste des candidats", "Nuance"]
+        try:
+            "Voix" in list(res.columns) and ptc is not None
+            cols_a_garder.append["Voix"]
+            res.loc[:, "Voix"] = res["Voix"].map(parsage_nombres)
+            res["Tot. Exprimés"] = res["Voix"].sum()
+            ptc.loc[:, "Nombre"] = ptc["Nombre"].map(parsage_nombres)
+            res["Tot. Inscrits"] = ptc.loc["Inscrits", "Nombre"]
+            res["Pct. Exprimés"] = res["Voix"] / res["Tot. Exprimés"]
+            res["Pct. Inscrits"] = res["Voix"] / res["Tot. Inscrits"]
+        except:
+            print("Les résultats et la participation ne sont pas disponibles.")
+            pass
+        finally:
+            res = res.loc[:, cols_a_garder]
+            self.resultat = res
 
 class PremierTour(Scrutin):
 
