@@ -5,6 +5,7 @@
 - 2023-07-04
 
 - Création d'une classe `SecondTour` héritière de la classe `Scrutin`
+- `SecondTour` peut s'importer depuis le paquet
 
 ## v2.0.1
 
