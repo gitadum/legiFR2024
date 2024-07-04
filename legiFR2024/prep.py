@@ -38,9 +38,10 @@ class Scrutin:
     """
     Scrutin législatif pour une circonscription française donnée
     """
-    def __init__(self, dept: str, circ: int) -> None:
+    def __init__(self, dept: str, circ: int, clos: bool = True) -> None:
         self.dept = dept
         self.circ = circ
+        self.clos = clos
         self.resultat: pd.DataFrame = None
         self.particip: pd.DataFrame = None
         pass
@@ -127,25 +128,27 @@ class PremierTour(Scrutin):
             return True
 
     def issue(self):
-        self.recup_resultat(posresu=1, pospart=2)
+        pospart = 2 if self.clos else None 
+        self.recup_resultat(posresu=1, pospart=pospart)
         self.prepare_resultat()
-        resu = self.resultat
-        resu["Eliminé"] = False
-        # Détermine si un candidat est élu dès le 1er tour
-        resu["Elu"] = resu.apply(PremierTour.est_elu, axis=1)
-        # Si un candidat est élu dès le 1er tour, les autres sont éliminés
-        if resu[resu["Elu"]].shape[0] != 0:
-            resu.loc[~resu["Elu"], "Eliminé"] = True
-        # Détermine quels candidats sont qualifiés pour le 2nd tour
-        resu["Qualifié"] = resu.apply(PremierTour.est_qualifie, axis=1)
-        # Élimine les candidats qui ne sont ni élus ni qualifiés
-        resu["Eliminé"] = resu.apply(PremierTour.est_elimine, axis=1)
-        # Si aucun des candidats n'est élu
-        # et qu'il y n'y a pas au moins 2 candidats qualifiés,
-        # on prend les 2 premiers candidats par nombre de voix,
-        # et on qualifie ces candidats pour le 2nd tour
-        if (resu[resu["Elu"]].shape[0] == 0) and (resu[resu["Qualifié"]].shape[0] < 2):
-            deux_premiers = resu.sort_values(by="Voix", ascending=False)[:2].index
-            resu.loc[deux_premiers, "Qualifié"] = True
-            resu.loc[deux_premiers, "Eliminé"] = False
-        self.resultat = resu
+        if self.clos:
+            resu = self.resultat
+            resu["Eliminé"] = False
+            # Détermine si un candidat est élu dès le 1er tour
+            resu["Elu"] = resu.apply(PremierTour.est_elu, axis=1)
+            # Si un candidat est élu dès le 1er tour, les autres sont éliminés
+            if resu[resu["Elu"]].shape[0] != 0:
+                resu.loc[~resu["Elu"], "Eliminé"] = True
+            # Détermine quels candidats sont qualifiés pour le 2nd tour
+            resu["Qualifié"] = resu.apply(PremierTour.est_qualifie, axis=1)
+            # Élimine les candidats qui ne sont ni élus ni qualifiés
+            resu["Eliminé"] = resu.apply(PremierTour.est_elimine, axis=1)
+            # Si aucun des candidats n'est élu
+            # et qu'il y n'y a pas au moins 2 candidats qualifiés,
+            # on prend les 2 premiers candidats par nombre de voix,
+            # et on qualifie ces candidats pour le 2nd tour
+            if (resu[resu["Elu"]].shape[0] == 0) and (resu[resu["Qualifié"]].shape[0] < 2):
+                deux_premiers = resu.sort_values(by="Voix", ascending=False)[:2].index
+                resu.loc[deux_premiers, "Qualifié"] = True
+                resu.loc[deux_premiers, "Eliminé"] = False
+            self.resultat = resu
