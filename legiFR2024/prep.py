@@ -152,3 +152,16 @@ class PremierTour(Scrutin):
                 resu.loc[deux_premiers, "Qualifié"] = True
                 resu.loc[deux_premiers, "Eliminé"] = False
             self.resultat = resu
+
+
+class SecondTour(Scrutin):
+
+    def issue(self):
+        pospart = 1 if self.clos else None
+        self.recup_resultat(posresu=0, pospart=pospart)
+        self.prepare_resultat()
+        if self.clos:
+            resu = self.resultat
+            resu["Elu"] = False
+            candidat_elu = resu.sort_values(by="Voix", ascending=False)[0].index
+            resu.loc[candidat_elu, "Elu"] = True
