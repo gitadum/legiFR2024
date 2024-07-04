@@ -46,45 +46,50 @@ class Scrutin:
         self.particip: pd.DataFrame = None
         pass
     
-    def recup_resultat(self, posresu: int, pospart: int):
+    def recup_resultat(self, tour: int):
         """
         Récupère les tableaux de résultats et participations
         pour le scrutin depuis le site du ministère de l'intérieur
-        * posresu: position du tableau résultat parmi les tableaux scrappés
-        * pospart: position du tableau participation parmi les tableaux scrappés
-        
-        N.B. : la position de ces tableaux change
-        selon que le scrutin soit un 1er ou un 2nd tour.
+        * tour: détermine si le scrutin est un premier ou un second tour
         """
-        sdept = str(self.dept).zfill(2)
-        scirc = sdept + str(self.circ).zfill(2)
-        numgeo = ENSGEOS[self.dept]
-        url =  "/".join([URLBASE, numgeo, sdept, scirc, "index.html"])
-        self.resultat = lire_tables_web(url)[posresu]
-        if pospart is not None:
-            self.particip = lire_tables_web(url)[pospart] 
+        clef_dept = str(self.dept).zfill(2)
+        clef_circ = clef_dept + str(self.circ).zfill(2)
+        num_geo = ENSGEOS[self.dept]
+        url =  "/".join([URLBASE, num_geo, clef_dept, clef_circ, "index.html"])
+        tables = lire_tables_web(url)
+        if tour == 1:
+            tables = tables[-2:]
+        elif tour == 2:
+            tables = tables[:-2]
+
+        self.resultat = tables[0]
+        if len(tables) > 1:
+            self.particip = tables[1] 
             self.particip.set_index(self.particip.columns[0], inplace=True)
             self.particip.index.name = "Participation"
-    
+            
     def prepare_resultat(self):
-        res = self.resultat
-        ptc = self.particip
-        cols_a_garder = ["Liste des candidats", "Nuance"]
+        resu = self.resultat
+        part = self.particip
+        cols_a_garder_resu = ["Liste des candidats", "Nuance"]
+        cols_a_garder_part = ["Nombre"]
         try:
-            "Voix" in list(res.columns) and ptc is not None
-            cols_a_garder.append["Voix"]
-            res.loc[:, "Voix"] = res["Voix"].map(parsage_nombres)
-            res["Tot. Exprimés"] = res["Voix"].sum()
-            ptc.loc[:, "Nombre"] = ptc["Nombre"].map(parsage_nombres)
-            res["Tot. Inscrits"] = ptc.loc["Inscrits", "Nombre"]
-            res["Pct. Exprimés"] = res["Voix"] / res["Tot. Exprimés"]
-            res["Pct. Inscrits"] = res["Voix"] / res["Tot. Inscrits"]
-        except:
+            assert ("Voix" in list(resu.columns)) and (part is not None)
+            cols_a_garder_resu.append("Voix")
+            resu = resu.loc[:, cols_a_garder_resu]
+            part = part.loc[:, cols_a_garder_part]
+            resu.loc[:, "Voix"] = resu["Voix"].map(parsage_nombres)
+            resu["Tot. Exprimés"] = resu["Voix"].sum()
+            part.loc[:, "Nombre"] = part["Nombre"].map(parsage_nombres)
+            resu["Tot. Inscrits"] = part.loc["Inscrits", "Nombre"]
+            resu["Pct. Exprimés"] = resu["Voix"] / resu["Tot. Exprimés"]
+            resu["Pct. Inscrits"] = resu["Voix"] / resu["Tot. Inscrits"]
+        except AssertionError:
             print("Les résultats et la participation ne sont pas disponibles.")
             pass
         finally:
-            res = res.loc[:, cols_a_garder]
-            self.resultat = res
+            self.resultat = resu
+            self.particip = part
 
 class PremierTour(Scrutin):
 
@@ -128,8 +133,7 @@ class PremierTour(Scrutin):
             return True
 
     def issue(self):
-        pospart = 2 if self.clos else None 
-        self.recup_resultat(posresu=1, pospart=pospart)
+        self.recup_resultat(tour=1)
         self.prepare_resultat()
         if self.clos:
             resu = self.resultat
@@ -156,12 +160,30 @@ class PremierTour(Scrutin):
 
 class SecondTour(Scrutin):
 
+    def __init__(self, dept: str, circ: int, clos: bool = True) -> None:
+        Scrutin.__init__(self, dept, circ, clos)
+        t1 = PremierTour(self.dept, self.circ)
+        t1.issue()
+        self.resultat_t1 = t1.resultat
+
+    def est_maintenu(self):
+        resu_t1 = self.resultat_t1
+        if resu_t1[resu_t1["Elu"]].shape[0] == 1:
+            return False
+        else:
+            return True
+
     def issue(self):
-        pospart = 1 if self.clos else None
-        self.recup_resultat(posresu=0, pospart=pospart)
-        self.prepare_resultat()
-        if self.clos:
-            resu = self.resultat
-            resu["Elu"] = False
-            candidat_elu = resu.sort_values(by="Voix", ascending=False)[0].index
-            resu.loc[candidat_elu, "Elu"] = True
+        if self.est_maintenu():
+            self.recup_resultat(tour=2)
+            self.prepare_resultat()
+            if self.clos:
+                resu = self.resultat
+                resu["Elu"] = False
+                candidat_elu = resu.sort_values(by="Voix", ascending=False)[0].index
+                resu.loc[candidat_elu, "Elu"] = True
+                self.resultat = resu
+        else:
+            resu = self.resultat_t1
+            resu = resu[resu["Elu"]]
+            self.resultat = resu
