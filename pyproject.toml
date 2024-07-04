@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "legiFR2024"
-version = "2.0.1"
+version = "2.1.0"
 description = "Utilitaire Python pour les élections législatives françaises de 2024"
 authors = [
     {name="Adrien DUMONT", email="dev@adum.io"}

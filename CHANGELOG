@@ -1,5 +1,12 @@
 # Journal des versions du projet
 
+## v2.1.0
+
+- 2023-07-04
+
+- Création d'une classe `SecondTour` héritière de la classe `Scrutin`
+- `SecondTour` peut s'importer depuis le paquet
+
 ## v2.0.1
 
 - 2023-07-04
