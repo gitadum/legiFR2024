@@ -5,6 +5,9 @@
 - 2023-07-04
 
 - `utils` : Séparation de la partie "scrapage"
+- Ajout de `SecondTour.est_maintenu()`
+  - prend en compte le cas où un député est déjà élu dès le 1er tour
+- Refactorisation de `Scrutin.prepare_resultat()`
 
 ## v2.1.0
 
