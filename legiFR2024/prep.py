@@ -160,12 +160,30 @@ class PremierTour(Scrutin):
 
 class SecondTour(Scrutin):
 
+    def __init__(self, dept: str, circ: int, clos: bool = True) -> None:
+        Scrutin.__init__(self, dept, circ, clos)
+        t1 = PremierTour(self.dept, self.circ)
+        t1.issue()
+        self.resultat_t1 = t1.resultat
+
+    def est_maintenu(self):
+        resu_t1 = self.resultat_t1
+        if resu_t1[resu_t1["Elu"]].shape[0] == 1:
+            return False
+        else:
+            return True
+
     def issue(self):
-        self.recup_resultat(tour=2)
-        self.prepare_resultat()
-        if self.clos:
-            resu = self.resultat
-            resu["Elu"] = False
-            candidat_elu = resu.sort_values(by="Voix", ascending=False)[0].index
-            resu.loc[candidat_elu, "Elu"] = True
+        if self.est_maintenu():
+            self.recup_resultat(tour=2)
+            self.prepare_resultat()
+            if self.clos:
+                resu = self.resultat
+                resu["Elu"] = False
+                candidat_elu = resu.sort_values(by="Voix", ascending=False)[0].index
+                resu.loc[candidat_elu, "Elu"] = True
+                self.resultat = resu
+        else:
+            resu = self.resultat_t1
+            resu = resu[resu["Elu"]]
             self.resultat = resu

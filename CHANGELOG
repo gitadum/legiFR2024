@@ -8,6 +8,7 @@
 - Ajout de `SecondTour.est_maintenu()`
   - prend en compte le cas où un député est déjà élu dès le 1er tour
 - Refactorisation de `Scrutin.prepare_resultat()`
+  - Suivant le numéro du tour, `prepare_resultat()` prendra les 2 premiers tableaux ou les 2 derniers
 
 ## v2.1.0
 
