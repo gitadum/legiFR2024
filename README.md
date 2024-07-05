@@ -18,6 +18,27 @@ pip install -r requirements.txt
 pip install .
 ```
 
+### Contribution au projet
+
+Prérequis
+
+* Python 3.12
+* PIP 24.1
+* Pyenv 2.3
+* Git 2.25
+
+```sh
+cd legiFR2024
+pyenv local 3.12
+exit
+python -m pip install virtualenv
+python -m virtualenv .venv
+source .venv/bin/activate # UNIX
+source .venv/Scripts/activate # Windows
+pip install -r requirements.dev.txt
+pip install -r requirements.txt
+```
+
 ## Utilisation
 
 ### Exemple
